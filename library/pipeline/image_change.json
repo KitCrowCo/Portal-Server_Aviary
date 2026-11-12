@@ -1,0 +1,188 @@
+{
+ "name": "Change an image",
+ "group": "images",
+ "objective": "A new image from one picked image and a description of the change: how far it may move from the picture is the strength. The result is kept beside the others.",
+ "about": [
+  "prompt",
+  "picked"
+ ],
+ "roles": {
+  "painter": {
+   "needs": [
+    "image_generate"
+   ],
+   "about": "the image model, and the machine whose prompt encoder goes with it"
+  }
+ },
+ "params": {
+  "picked": {
+   "label": "The image to start from",
+   "type": "items",
+   "space_from": "from_space",
+   "default": []
+  },
+  "prompt": {
+   "label": "What it should become",
+   "type": "long"
+  },
+  "strength": {
+   "label": "How far from the picture (0 to 1)",
+   "type": "number",
+   "default": 0.6
+  },
+  "steps": {
+   "label": "Steps",
+   "type": "integer",
+   "default": 4
+  },
+  "seed": {
+   "label": "Seed (-1: a new one each time)",
+   "type": "integer",
+   "default": -1
+  },
+  "from_space": {
+   "label": "Picked from",
+   "pick": "space",
+   "default": "media"
+  },
+  "space": {
+   "label": "Kept in",
+   "pick": "space",
+   "default": "media"
+  },
+  "folder": {
+   "label": "Folder there",
+   "default": "images"
+  }
+ },
+ "steps": [
+  {
+   "id": "list",
+   "type": "file_list",
+   "needs": [
+    "picked",
+    "from_space"
+   ],
+   "gives": [
+    "files"
+   ],
+   "config": {
+    "space": "{from_space}",
+    "paths": "{picked}",
+    "extensions": [
+     ".png",
+     ".jpg",
+     ".jpeg",
+     ".webp"
+    ],
+    "give": "files"
+   }
+  },
+  {
+   "id": "first",
+   "type": "expr",
+   "needs": [
+    "files"
+   ],
+   "gives": [
+    "path"
+   ],
+   "config": {
+    "expr": "files[0]",
+    "give": "path"
+   }
+  },
+  {
+   "id": "read",
+   "type": "file_read",
+   "needs": [
+    "path",
+    "from_space"
+   ],
+   "gives": [
+    "b64"
+   ],
+   "config": {
+    "space": "{from_space}",
+    "path": "{path}",
+    "base64": true,
+    "give": "b64"
+   }
+  },
+  {
+   "id": "encode",
+   "type": "capability",
+   "needs": [
+    "prompt"
+   ],
+   "gives": [
+    "embed"
+   ],
+   "config": {
+    "role": "painter",
+    "capability": "text_encode",
+    "model": false,
+    "body": {
+     "prompt": "{prompt}"
+    },
+    "give": {
+     "embed": "result.job_id"
+    }
+   }
+  },
+  {
+   "id": "paint",
+   "type": "capability",
+   "once": true,
+   "needs": [
+    "embed",
+    "prompt",
+    "b64",
+    "strength",
+    "steps",
+    "seed"
+   ],
+   "gives": [
+    "file_name"
+   ],
+   "config": {
+    "role": "painter",
+    "capability": "image_generate",
+    "detached": true,
+    "body": {
+     "prompt": "{prompt}",
+     "embed_job_id": "{embed}",
+     "image": "data:image/png;base64,{b64}",
+     "strength": "{strength}",
+     "width": 0,
+     "height": 0,
+     "steps": "{steps}",
+     "seed": "{seed}"
+    },
+    "give": {
+     "file_name": "result.file_name"
+    }
+   }
+  },
+  {
+   "id": "bring",
+   "type": "fetch",
+   "needs": [
+    "file_name",
+    "space",
+    "folder"
+   ],
+   "gives": [
+    "made"
+   ],
+   "config": {
+    "role": "painter",
+    "location": "outputs",
+    "path": "{file_name}",
+    "space": "{space}",
+    "into": "{folder}",
+    "give": "made"
+   }
+  }
+ ]
+}

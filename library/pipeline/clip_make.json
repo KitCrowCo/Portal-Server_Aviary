@@ -1,0 +1,99 @@
+{
+ "name": "Make a clip",
+ "group": "images",
+ "objective": "A short moving clip from a description, by the model filling the animator role; kept as a GIF beside the images.",
+ "about": [
+  "prompt"
+ ],
+ "roles": {
+  "animator": {
+   "needs": [
+    "text_to_video"
+   ],
+   "about": "the video model"
+  }
+ },
+ "params": {
+  "prompt": {
+   "label": "Description",
+   "type": "long"
+  },
+  "frames": {
+   "label": "Frames",
+   "type": "integer",
+   "default": 25
+  },
+  "fps": {
+   "label": "Frames per second",
+   "type": "number",
+   "default": 8
+  },
+  "seed": {
+   "label": "Seed (-1: a new one each time)",
+   "type": "integer",
+   "default": -1
+  },
+  "space": {
+   "label": "Kept in",
+   "pick": "space",
+   "default": "media"
+  },
+  "folder": {
+   "label": "Folder there",
+   "default": "clips"
+  }
+ },
+ "steps": [
+  {
+   "id": "make",
+   "type": "capability",
+   "once": true,
+   "needs": [
+    "prompt",
+    "frames",
+    "fps",
+    "seed"
+   ],
+   "gives": [
+    "file_name"
+   ],
+   "config": {
+    "role": "animator",
+    "capability": "text_to_video",
+    "detached": true,
+    "body": {
+     "prompt": "{prompt}",
+     "num_frames": "{frames}",
+     "fps": "{fps}",
+     "seed": "{seed}",
+     "formats": [
+      "gif"
+     ]
+    },
+    "give": {
+     "file_name": "result.file_name"
+    }
+   }
+  },
+  {
+   "id": "bring",
+   "type": "fetch",
+   "needs": [
+    "file_name",
+    "space",
+    "folder"
+   ],
+   "gives": [
+    "made"
+   ],
+   "config": {
+    "role": "animator",
+    "location": "outputs",
+    "path": "{file_name}",
+    "space": "{space}",
+    "into": "{folder}",
+    "give": "made"
+   }
+  }
+ ]
+}

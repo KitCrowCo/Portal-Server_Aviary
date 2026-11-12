@@ -1,0 +1,6 @@
+{
+ "name": "Made media",
+ "about": "Images, clips and sounds that work made: each run's files land here directly (nothing of a person's is overwritten, so no review is needed).",
+ "root": "./data/_media",
+ "direct": true
+}

@@ -1,0 +1,129 @@
+{
+ "name": "Chat turn over a knowledge group",
+ "group": "conversation",
+ "objective": "One answer to a conversation so far, written from what a knowledge group holds on the latest message.",
+ "roles": {
+  "main": {
+   "needs": [
+    "chat"
+   ],
+   "about": "the model that answers",
+   "facts": {
+    "chars": {
+     "is": "len(str(messages))",
+     "label": "length of the conversation (characters)",
+     "kind": "number"
+    },
+    "images": {
+     "is": "any(m.get('images') for m in messages)",
+     "label": "images come with it",
+     "kind": "yes/no"
+    }
+   }
+  },
+  "library": {
+   "needs": [
+    "knowledge_query",
+    "knowledge_add"
+   ],
+   "about": "the knowledge group asked first - optional: left empty, the answer is written without it",
+   "optional": true
+  }
+ },
+ "params": {
+  "messages": {
+   "label": "Conversation so far",
+   "type": "list"
+  },
+  "system": {
+   "label": "Standing instructions",
+   "default": "",
+   "type": "long"
+  },
+  "think": {
+   "label": "Thinking",
+   "type": "boolean",
+   "default": false
+  }
+ },
+ "steps": [
+  {
+   "id": "last",
+   "type": "expr",
+   "needs": [
+    "messages"
+   ],
+   "gives": [
+    "question"
+   ],
+   "config": {
+    "expr": "messages[-1]['content']",
+    "give": "question"
+   }
+  },
+  {
+   "id": "find",
+   "type": "capability",
+   "needs": [
+    "question"
+   ],
+   "gives": [
+    "found"
+   ],
+   "config": {
+    "role": "library",
+    "capability": "knowledge_query",
+    "body": {
+     "query": "{question}",
+     "options": {
+      "only_need_context": true
+     }
+    },
+    "give": {
+     "found": "text"
+    }
+   }
+  },
+  {
+   "id": "frame",
+   "type": "expr",
+   "needs": [
+    "messages",
+    "system",
+    "found"
+   ],
+   "gives": [
+    "framed"
+   ],
+   "config": {
+    "expr": "([{'role': 'system', 'content': (system + '\\n\\n' if system else '') + ('What the knowledge group holds on this:\\n' + str(found) if found else '')}] if system or found else []) + messages",
+    "give": "framed"
+   }
+  },
+  {
+   "id": "answer",
+   "type": "capability",
+   "needs": [
+    "framed"
+   ],
+   "gives": [
+    "text",
+    "thinking",
+    "usage"
+   ],
+   "config": {
+    "role": "main",
+    "capability": "chat",
+    "body": {
+     "messages": "{framed}",
+     "think": "{think}"
+    },
+    "give": {
+     "text": "text",
+     "thinking": "thinking",
+     "usage": "usage"
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,46 @@
+{
+ "name": "Say a text",
+ "group": "voice",
+ "objective": "Text to speech: a text becomes a recording in a voice.",
+ "about": [
+  "text"
+ ],
+ "roles": {
+  "voice": {
+   "needs": [
+    "text_to_speech"
+   ],
+   "about": "the voice that speaks"
+  }
+ },
+ "params": {
+  "text": {
+   "label": "Text",
+   "type": "long"
+  }
+ },
+ "steps": [
+  {
+   "id": "say",
+   "type": "capability",
+   "needs": [
+    "text"
+   ],
+   "gives": [
+    "audio_b64",
+    "format"
+   ],
+   "config": {
+    "role": "voice",
+    "capability": "text_to_speech",
+    "body": {
+     "text": "{text}"
+    },
+    "give": {
+     "audio_b64": "result.audio_b64",
+     "format": "result.format"
+    }
+   }
+  }
+ ]
+}

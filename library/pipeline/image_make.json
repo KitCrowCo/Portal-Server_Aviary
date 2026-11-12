@@ -1,0 +1,141 @@
+{
+ "name": "Make an image",
+ "group": "images",
+ "objective": "An image from a description: the prompt is encoded, the image made by the model filling the painter role, and the file brought into a space's folder.",
+ "about": [
+  "prompt"
+ ],
+ "roles": {
+  "painter": {
+   "needs": [
+    "image_generate"
+   ],
+   "about": "the image model, and the machine whose prompt encoder goes with it"
+  }
+ },
+ "params": {
+  "prompt": {
+   "label": "Description",
+   "type": "long"
+  },
+  "width": {
+   "label": "Width",
+   "type": "integer",
+   "default": 1024
+  },
+  "height": {
+   "label": "Height",
+   "type": "integer",
+   "default": 1024
+  },
+  "steps": {
+   "label": "Steps",
+   "type": "integer",
+   "default": 4
+  },
+  "guidance": {
+   "label": "Guidance",
+   "type": "number",
+   "default": 1.0
+  },
+  "seed": {
+   "label": "Seed (-1: a new one each time)",
+   "type": "integer",
+   "default": -1
+  },
+  "loras": {
+   "label": "LoRAs",
+   "type": "list",
+   "default": [],
+   "hint": "[{\"path\": file under the machine's loras, \"scale\": 1.0}]"
+  },
+  "space": {
+   "label": "Kept in",
+   "pick": "space",
+   "default": "media"
+  },
+  "folder": {
+   "label": "Folder there",
+   "default": "images"
+  }
+ },
+ "steps": [
+  {
+   "id": "encode",
+   "type": "capability",
+   "needs": [
+    "prompt"
+   ],
+   "gives": [
+    "embed"
+   ],
+   "config": {
+    "role": "painter",
+    "capability": "text_encode",
+    "model": false,
+    "body": {
+     "prompt": "{prompt}"
+    },
+    "give": {
+     "embed": "result.job_id"
+    }
+   }
+  },
+  {
+   "id": "paint",
+   "type": "capability",
+   "once": true,
+   "needs": [
+    "embed",
+    "prompt",
+    "width",
+    "height",
+    "steps",
+    "guidance",
+    "seed",
+    "loras"
+   ],
+   "gives": [
+    "file_name"
+   ],
+   "config": {
+    "role": "painter",
+    "capability": "image_generate",
+    "detached": true,
+    "body": {
+     "prompt": "{prompt}",
+     "embed_job_id": "{embed}",
+     "width": "{width}",
+     "height": "{height}",
+     "steps": "{steps}",
+     "guidance_scale": "{guidance}",
+     "seed": "{seed}",
+     "loras": "{loras}"
+    },
+    "give": {
+     "file_name": "result.file_name"
+    }
+   }
+  },
+  {
+   "id": "bring",
+   "type": "fetch",
+   "needs": [
+    "file_name",
+    "space",
+    "folder"
+   ],
+   "gives": [
+    "image"
+   ],
+   "config": {
+    "role": "painter",
+    "location": "outputs",
+    "path": "{file_name}",
+    "space": "{space}",
+    "into": "{folder}",
+    "give": "image"
+   }
+  }
+ ]
+}

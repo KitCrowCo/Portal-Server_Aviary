@@ -1,0 +1,291 @@
+{
+ "name": "Add files to a knowledge group",
+ "group": "knowledge",
+ "objective": "Adds the files picked (a folder stands for every file in it) to a knowledge group, one after the other. Source code goes in as text cut at whole definitions; everything else goes in whole and the group's program reads it (PDFs, office files, text). A file the group holds under the same name is replaced, and one whose content has not changed since it was last added is not sent again - so picking a folder again later is a sync.",
+ "roles": {
+  "library": {
+   "needs": [
+    "knowledge_upload",
+    "knowledge_add"
+   ],
+   "about": "the knowledge group that is added to"
+  }
+ },
+ "steps": [
+  {
+   "id": "list",
+   "type": "file_list",
+   "needs": [
+    "picked"
+   ],
+   "gives": [
+    "files"
+   ],
+   "config": {
+    "space": "{space}",
+    "paths": "{picked}",
+    "skip": "{skip}",
+    "give": "files"
+   }
+  },
+  {
+   "id": "add",
+   "type": "pipeline",
+   "needs": [
+    "files"
+   ],
+   "gives": [
+    "added"
+   ],
+   "keep": true,
+   "config": {
+    "plan": {
+     "name": "Add one file",
+     "roles": {
+      "library": {
+       "needs": [
+        "knowledge_upload",
+        "knowledge_add"
+       ],
+       "about": "the knowledge group that is added to"
+      }
+     },
+     "keep": true,
+     "params": {
+      "space": {},
+      "path": {},
+      "folders": {},
+      "strip": {},
+      "code": {},
+      "code_chars": {}
+     },
+     "steps": [
+      {
+       "id": "name",
+       "type": "expr",
+       "needs": [
+        "path",
+        "folders",
+        "strip"
+       ],
+       "gives": [
+        "name"
+       ],
+       "config": {
+        "expr": "(lambda p: p.replace('/', '__') if folders else p.rsplit('/', 1)[-1])(next((path[len(s.rstrip('/')) + 1:] for s in strip if s and path.startswith(s.rstrip('/') + '/')), path))",
+        "give": "name"
+       }
+      },
+      {
+       "id": "kind",
+       "type": "expr",
+       "needs": [
+        "path",
+        "code"
+       ],
+       "gives": [
+        "as_code",
+        "as_file"
+       ],
+       "config": {
+        "expr": "'code' if ('.' + path.rsplit('.', 1)[-1].lower()) in code else 'file'",
+        "routes": {
+         "code": "as_code",
+         "file": "as_file"
+        }
+       }
+      },
+      {
+       "id": "text",
+       "type": "file_read",
+       "needs": [
+        "as_code"
+       ],
+       "gives": [
+        "text"
+       ],
+       "config": {
+        "space": "{space}",
+        "path": "{path}",
+        "give": "text"
+       }
+      },
+      {
+       "id": "cut",
+       "type": "chunk",
+       "needs": [
+        "text"
+       ],
+       "gives": [
+        "pieces"
+       ],
+       "config": {
+        "of": "text",
+        "code": true,
+        "path": "{path}",
+        "chars": "{code_chars}",
+        "give": "pieces"
+       }
+      },
+      {
+       "id": "add_code",
+       "type": "capability",
+       "once": true,
+       "needs": [
+        "pieces",
+        "name",
+        "text"
+       ],
+       "gives": [
+        "added"
+       ],
+       "config": {
+        "role": "library",
+        "capability": "knowledge_add",
+        "detached": true,
+        "body": {
+         "name": "{name}",
+         "text": "{text}",
+         "pieces": "{pieces}"
+        },
+        "give": {
+         "added": "result.status"
+        }
+       }
+      },
+      {
+       "id": "data",
+       "type": "file_read",
+       "needs": [
+        "as_file"
+       ],
+       "gives": [
+        "data"
+       ],
+       "config": {
+        "space": "{space}",
+        "path": "{path}",
+        "base64": true,
+        "give": "data"
+       }
+      },
+      {
+       "id": "add_file",
+       "type": "capability",
+       "once": true,
+       "needs": [
+        "data",
+        "name"
+       ],
+       "gives": [
+        "added"
+       ],
+       "config": {
+        "role": "library",
+        "capability": "knowledge_upload",
+        "detached": true,
+        "body": {
+         "name": "{name}",
+         "data": "{data}"
+        },
+        "give": {
+         "added": "result.status"
+        }
+       }
+      }
+     ]
+    },
+    "each": "files",
+    "in_turn": true,
+    "inputs": {
+     "space": "{space}",
+     "path": "{item}",
+     "folders": "{folders}",
+     "strip": "{strip}",
+     "code": "{code}",
+     "code_chars": "{code_chars}"
+    },
+    "give": {
+     "added": "added"
+    }
+   }
+  },
+  {
+   "id": "count",
+   "type": "expr",
+   "needs": [
+    "added",
+    "files"
+   ],
+   "gives": [
+    "summary"
+   ],
+   "config": {
+    "expr": "{s: sum(1 for x in added if (x or 'failed') == s) for s in set(x or 'failed' for x in added)}",
+    "give": "summary"
+   }
+  }
+ ],
+ "about": [
+  "picked"
+ ],
+ "params": {
+  "space": {
+   "label": "Space",
+   "pick": "space",
+   "default": "common"
+  },
+  "picked": {
+   "label": "Files and folders",
+   "type": "items",
+   "space_from": "space",
+   "default": []
+  },
+  "folders": {
+   "label": "Keep the folder path in document names",
+   "type": "boolean",
+   "default": true,
+   "hint": "notes/a.md goes in as notes__a.md, so same-named files in different folders stay apart (the group's program knows only flat names)."
+  },
+  "strip": {
+   "label": "Folders left out of document names",
+   "type": "list",
+   "default": [],
+   "hint": "e.g. [\"code\"]: code/core/main.py is named core__main.py"
+  },
+  "skip": {
+   "label": "Never send",
+   "type": "list",
+   "default": [
+    "*.min.js",
+    "*.min.css",
+    "*.map",
+    "LICENSE*",
+    "node_modules/",
+    "static/fonts/"
+   ],
+   "hint": "folder/ anywhere in the path, or a name pattern"
+  },
+  "code": {
+   "label": "Cut as code (file endings)",
+   "type": "list",
+   "default": [
+    ".py",
+    ".js",
+    ".ts",
+    ".css",
+    ".html",
+    ".sh",
+    ".json",
+    ".yml",
+    ".yaml",
+    ".toml"
+   ]
+  },
+  "code_chars": {
+   "label": "Code piece size (characters)",
+   "type": "integer",
+   "default": 4000
+  }
+ }
+}

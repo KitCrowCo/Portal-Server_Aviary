@@ -1,0 +1,83 @@
+{
+ "name": "Chat turn",
+ "group": "conversation",
+ "objective": "One answer to a conversation so far.",
+ "roles": {
+  "main": {
+   "needs": [
+    "chat"
+   ],
+   "about": "the model that answers",
+   "facts": {
+    "chars": {
+     "is": "len(str(messages))",
+     "label": "length of the conversation (characters)",
+     "kind": "number"
+    },
+    "images": {
+     "is": "any(m.get('images') for m in messages)",
+     "label": "images come with it",
+     "kind": "yes/no"
+    }
+   }
+  }
+ },
+ "params": {
+  "messages": {
+   "label": "Conversation so far",
+   "type": "list"
+  },
+  "system": {
+   "label": "Standing instructions",
+   "default": "",
+   "type": "long"
+  },
+  "think": {
+   "label": "Thinking",
+   "type": "boolean",
+   "default": false
+  }
+ },
+ "steps": [
+  {
+   "id": "frame",
+   "type": "expr",
+   "needs": [
+    "messages",
+    "system"
+   ],
+   "gives": [
+    "framed"
+   ],
+   "config": {
+    "expr": "([{'role': 'system', 'content': system}] if system else []) + messages",
+    "give": "framed"
+   }
+  },
+  {
+   "id": "answer",
+   "type": "capability",
+   "needs": [
+    "framed"
+   ],
+   "gives": [
+    "text",
+    "thinking",
+    "usage"
+   ],
+   "config": {
+    "role": "main",
+    "capability": "chat",
+    "body": {
+     "messages": "{framed}",
+     "think": "{think}"
+    },
+    "give": {
+     "text": "text",
+     "thinking": "thinking",
+     "usage": "usage"
+    }
+   }
+  }
+ ]
+}

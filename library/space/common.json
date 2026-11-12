@@ -1,0 +1,5 @@
+{
+ "name": "Shared files",
+ "about": "The portal's shared folder.",
+ "root": "./data/_common"
+}

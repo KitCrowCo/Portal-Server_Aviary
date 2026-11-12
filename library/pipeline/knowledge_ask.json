@@ -1,0 +1,50 @@
+{
+ "name": "Ask a knowledge group",
+ "group": "knowledge",
+ "objective": "One question to a knowledge group, answered by the group's own program from what it holds.",
+ "roles": {
+  "library": {
+   "needs": [
+    "knowledge_query",
+    "knowledge_add"
+   ],
+   "about": "the knowledge group that is asked and added to"
+  }
+ },
+ "steps": [
+  {
+   "id": "ask",
+   "type": "capability",
+   "needs": [
+    "question"
+   ],
+   "gives": [
+    "answer"
+   ],
+   "config": {
+    "role": "library",
+    "capability": "knowledge_query",
+    "body": {
+     "query": "{question}",
+     "mode": "{mode}"
+    },
+    "give": {
+     "answer": "text"
+    }
+   }
+  }
+ ],
+ "about": [
+  "question"
+ ],
+ "params": {
+  "question": {
+   "label": "Question",
+   "type": "long"
+  },
+  "mode": {
+   "label": "Way of searching",
+   "default": "mix"
+  }
+ }
+}

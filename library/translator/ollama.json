@@ -1,0 +1,60 @@
+{
+ "name": "Ollama",
+ "about": "The Ollama server's own API (port 11434 by default). Chat and embeddings only; it says nothing of memory, so placement takes it as it is.",
+ "describe": {
+  "path": "/api/version"
+ },
+ "assets": {
+  "path": "/api/tags",
+  "list": "models",
+  "name": "name",
+  "size": "size",
+  "capabilities": {
+   "default": [
+    "chat",
+    "generate"
+   ],
+   "match": {
+    "embed": "embed|bge|nomic|minilm|e5-|gte-|snowflake"
+   }
+  }
+ },
+ "run": {
+  "chat": {
+   "path": "/api/chat",
+   "stream": "ndjson",
+   "body": {
+    "model": "{model}",
+    "messages": "{messages}",
+    "think": "{think}",
+    "options": "{options}",
+    "tools": "{tools}",
+    "stream": true
+   },
+   "text": "message.content",
+   "thinking": "message.thinking",
+   "tool_calls": "message.tool_calls",
+   "done": "done",
+   "usage": {
+    "prompt_n": "prompt_eval_count",
+    "gen_n": "eval_count",
+    "prompt_ms": [
+     "prompt_eval_duration",
+     1e-06
+    ],
+    "gen_ms": [
+     "eval_duration",
+     1e-06
+    ]
+   }
+  },
+  "embed": {
+   "path": "/api/embed",
+   "body": {
+    "model": "{model}",
+    "input": "{input}"
+   },
+   "result": "embeddings"
+  }
+ }
+}

@@ -1,0 +1,50 @@
+{
+ "name": "Hear what was said",
+ "group": "voice",
+ "objective": "Speech to text: a recording becomes the words said in it.",
+ "about": [
+  "language"
+ ],
+ "roles": {
+  "ears": {
+   "needs": [
+    "speech_to_text"
+   ],
+   "about": "the model that listens"
+  }
+ },
+ "params": {
+  "audio_b64": {
+   "label": "Recording (WAV, base64)",
+   "type": "long"
+  },
+  "language": {
+   "label": "Language (empty: found by listening)",
+   "default": null
+  }
+ },
+ "steps": [
+  {
+   "id": "listen",
+   "type": "capability",
+   "needs": [
+    "audio_b64",
+    "language"
+   ],
+   "gives": [
+    "text"
+   ],
+   "config": {
+    "role": "ears",
+    "capability": "speech_to_text",
+    "body": {
+     "audio_b64": "{audio_b64}",
+     "language": "{language}"
+    },
+    "give": {
+     "text": "result.text"
+    }
+   }
+  }
+ ]
+}
