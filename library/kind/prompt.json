@@ -1,0 +1,24 @@
+{
+ "name": "Prompts",
+ "about": "Standing instructions for a model: who it is here and how it answers. A pipeline that offers a prompt puts it before everything else it tells the model.",
+ "fields": {
+  "name": {
+   "label": "Name"
+  },
+  "about": {
+   "label": "What it is for",
+   "hint": "One line, shown where it is chosen."
+  },
+  "text": {
+   "label": "The text",
+   "type": "long",
+   "hint": "Written to the model. Plain text or Markdown."
+  },
+  "tags": {
+   "label": "Tags",
+   "type": "list",
+   "default": []
+  }
+ },
+ "text": "text"
+}

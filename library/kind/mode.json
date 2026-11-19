@@ -1,0 +1,24 @@
+{
+ "name": "Modes",
+ "about": "A saved way of answering in a conversation: which pipeline answers, with which values, and who fills its roles (a model, a pool, knowledge groups). Made from a conversation in Tessa (\"Save as a mode\"). Tessa offers every mode; a curated face such as Athena offers only the modes that name it here.",
+ "fields": {
+  "name": {
+   "label": "Name"
+  },
+  "about": {
+   "label": "What it is for (shown under the choice)",
+   "type": "long"
+  },
+  "pipeline": {
+   "label": "What answers",
+   "pick": "pipeline"
+  },
+  "faces": {
+   "label": "Also offered in these faces",
+   "pick": "face",
+   "many": true,
+   "default": [],
+   "hint": "Faces that offer every mode (Tessa) show it anyway."
+  }
+ }
+}

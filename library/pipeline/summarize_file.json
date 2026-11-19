@@ -1,0 +1,206 @@
+{
+ "name": "Summarize files",
+ "group": "documents",
+ "objective": "Reads each file picked from a space, cuts it into parts, folds each part into a running summary in turn, and proposes the result beside the file. Nothing in the space changes until the proposal is accepted.",
+ "roles": {
+  "main": {
+   "needs": [
+    "chat"
+   ],
+   "about": "the model that writes the summary"
+  }
+ },
+ "steps": [
+  {
+   "id": "list",
+   "type": "file_list",
+   "needs": [
+    "picked"
+   ],
+   "gives": [
+    "files"
+   ],
+   "config": {
+    "space": "{space}",
+    "paths": "{picked}",
+    "give": "files"
+   }
+  },
+  {
+   "id": "each",
+   "type": "pipeline",
+   "needs": [
+    "files"
+   ],
+   "gives": [
+    "written"
+   ],
+   "keep": true,
+   "config": {
+    "plan": {
+     "name": "Summarize one file",
+     "roles": {
+      "main": {
+       "needs": [
+        "chat"
+       ],
+       "about": "the model that writes the summary"
+      }
+     },
+     "keep": true,
+     "params": {
+      "space": {},
+      "path": {},
+      "chars": {}
+     },
+     "steps": [
+      {
+       "id": "read",
+       "type": "file_read",
+       "needs": [
+        "path"
+       ],
+       "gives": [
+        "text"
+       ],
+       "config": {
+        "space": "{space}",
+        "path": "{path}",
+        "give": "text"
+       }
+      },
+      {
+       "id": "cut",
+       "type": "chunk",
+       "needs": [
+        "text"
+       ],
+       "gives": [
+        "parts"
+       ],
+       "config": {
+        "of": "text",
+        "chars": "{chars}",
+        "give": "parts"
+       }
+      },
+      {
+       "id": "fold",
+       "type": "pipeline",
+       "needs": [
+        "parts"
+       ],
+       "gives": [
+        "summary"
+       ],
+       "keep": true,
+       "config": {
+        "plan": {
+         "name": "Fold one part into a summary",
+         "roles": {
+          "main": {
+           "needs": [
+            "chat"
+           ]
+          }
+         },
+         "keep": true,
+         "params": {
+          "item": {},
+          "summary": {
+           "default": ""
+          }
+         },
+         "steps": [
+          {
+           "id": "fold",
+           "type": "capability",
+           "needs": [
+            "item",
+            "summary"
+           ],
+           "gives": [
+            "summary"
+           ],
+           "config": {
+            "role": "main",
+            "capability": "chat",
+            "body": {
+             "messages": [
+              {
+               "role": "user",
+               "content": "Summary of the document so far:\n{summary}\n\nNext part of the document:\n{item}\n\nWrite the summary again so that it also covers this part. Give only the summary."
+              }
+             ]
+            },
+            "give": {
+             "summary": "text"
+            }
+           }
+          }
+         ]
+        },
+        "each": "parts",
+        "carry": [
+         "summary"
+        ],
+        "inputs": {
+         "item": "{item}",
+         "summary": "{summary}"
+        }
+       }
+      },
+      {
+       "id": "write",
+       "type": "file_write",
+       "once": true,
+       "needs": [
+        "summary"
+       ],
+       "gives": [
+        "written"
+       ],
+       "config": {
+        "space": "{space}",
+        "path": "{path}.summary.md",
+        "of": "summary",
+        "give": "written"
+       }
+      }
+     ]
+    },
+    "each": "files",
+    "in_turn": true,
+    "inputs": {
+     "space": "{space}",
+     "path": "{item}",
+     "chars": "{chars}"
+    },
+    "give": {
+     "written": "written"
+    }
+   }
+  }
+ ],
+ "about": [
+  "picked"
+ ],
+ "params": {
+  "space": {
+   "label": "Space",
+   "pick": "space",
+   "default": "common"
+  },
+  "picked": {
+   "label": "Files",
+   "type": "items",
+   "space_from": "space",
+   "default": []
+  },
+  "chars": {
+   "label": "Size of a part (characters)",
+   "type": "integer",
+   "default": 6000
+  }
+ }
+}

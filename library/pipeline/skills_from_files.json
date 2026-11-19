@@ -1,0 +1,134 @@
+{
+ "name": "Skills and contexts from files",
+ "group": "knowledge",
+ "objective": "Brings skills (how to do one kind of thing) or contexts (knowledge for one purpose) into the library from Markdown files - written by hand, or exported from another AI system with the porting guide. Each file is one object: a header between --- lines (name, about, tags, optional id), then its text. An object the library already holds the same is left; a different one under the same name is kept beside it as name-2 unless Replace is ticked (and a replaced one stays as an earlier version).",
+ "roles": {},
+ "keep": true,
+ "params": {
+  "space": {
+   "label": "Space",
+   "pick": "space"
+  },
+  "picked": {
+   "label": "Files and folders",
+   "type": "items",
+   "of": "space",
+   "hint": "A folder stands for every .md and .txt file in it."
+  },
+  "kind": {
+   "label": "They are",
+   "choices": [
+    "skill",
+    "context",
+    "prompt"
+   ],
+   "default": "skill"
+  },
+  "replace": {
+   "label": "Replace one of the same name",
+   "type": "boolean",
+   "default": false,
+   "hint": "Off: a different object under a name already used is saved as name-2."
+  }
+ },
+ "steps": [
+  {
+   "id": "files",
+   "type": "file_list",
+   "needs": [
+    "picked"
+   ],
+   "gives": [
+    "paths"
+   ],
+   "config": {
+    "space": "{space}",
+    "paths": "{picked}",
+    "extensions": [
+     ".md",
+     ".txt"
+    ],
+    "give": "paths"
+   }
+  },
+  {
+   "id": "each",
+   "type": "pipeline",
+   "needs": [
+    "paths"
+   ],
+   "gives": [
+    "objects"
+   ],
+   "config": {
+    "plan": {
+     "name": "Read one file as a library object",
+     "roles": {},
+     "params": {
+      "path": {},
+      "space": {}
+     },
+     "steps": [
+      {
+       "id": "read",
+       "type": "file_read",
+       "needs": [
+        "path"
+       ],
+       "gives": [
+        "text"
+       ],
+       "config": {
+        "space": "{space}",
+        "path": "{path}",
+        "give": "text"
+       }
+      },
+      {
+       "id": "parse",
+       "type": "expr",
+       "needs": [
+        "text",
+        "path"
+       ],
+       "gives": [
+        "obj"
+       ],
+       "config": {
+        "expr": "(lambda parts: (lambda meta, body: dict(name=meta.get('name') or path.rsplit('/', 1)[-1].rsplit('.', 1)[0], about=meta.get('about', ''), tags=[x.strip() for x in meta.get('tags', '').split(',') if x.strip()], text=body.strip(), source=meta.get('source', ''), **({'id': meta['id']} if meta.get('id') else dict())))(dict((l.split(':', 1)[0].strip().lower(), l.split(':', 1)[1].strip()) for l in parts[1].splitlines() if ':' in l), parts[2]) if len(parts) == 3 and not parts[0].strip() else dict(name=path.rsplit('/', 1)[-1].rsplit('.', 1)[0], about='', tags=[], text=text.strip()))(text.split('---', 2))",
+        "give": "obj"
+       }
+      }
+     ]
+    },
+    "each": "paths",
+    "inputs": {
+     "path": "{item}",
+     "space": "{space}"
+    },
+    "give": {
+     "objects": "obj"
+    }
+   }
+  },
+  {
+   "id": "save",
+   "type": "lib_put",
+   "once": true,
+   "needs": [
+    "objects",
+    "kind",
+    "replace"
+   ],
+   "gives": [
+    "saved"
+   ],
+   "config": {
+    "kind": "{kind}",
+    "of": "objects",
+    "replace": "{replace}",
+    "give": "saved"
+   }
+  }
+ ]
+}

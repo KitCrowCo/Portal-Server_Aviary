@@ -1,0 +1,152 @@
+{
+ "name": "Encode a prompt",
+ "group": "images",
+ "objective": "A prompt encoded for the image models and kept on the encoder's machine under a name made from the prompt, the encoder and the length. Encoding a kept prompt (with nothing added) notes the encoding on it: painting it later uses that encoding, on any machine, without the encoder.",
+ "about": [
+  "prompt_text"
+ ],
+ "roles": {
+  "encoder": {
+   "needs": [
+    "text_encode"
+   ],
+   "about": "the encoder model (a Qwen3 8B GGUF) and the machine that encodes. It may be another machine than the painter's: the encoding is carried to the painter."
+  }
+ },
+ "params": {
+  "saved": {
+   "label": "Kept prompt",
+   "pick": "image_prompt",
+   "default": "",
+   "hint": "One of Sunbird's kept prompts (Sunbird, Prompts)."
+  },
+  "prompt": {
+   "label": "Description",
+   "type": "long",
+   "default": "",
+   "hint": "Written here; with a kept prompt chosen above, this is added after it."
+  },
+  "max_len": {
+   "label": "Prompt tokens kept",
+   "type": "integer",
+   "default": 512,
+   "hint": "Longer prompts are cut here at encoding."
+  },
+  "truncate": {
+   "label": "Cut a longer prompt",
+   "type": "boolean",
+   "default": true
+  },
+  "again": {
+   "label": "Encode again even if kept",
+   "type": "boolean",
+   "default": false
+  }
+ },
+ "steps": [
+  {
+   "id": "words",
+   "type": "texts",
+   "needs": [
+    "saved",
+    "prompt"
+   ],
+   "gives": [
+    "prompt_text"
+   ],
+   "config": {
+    "kind": "image_prompt",
+    "ids": "{saved}",
+    "after": "{prompt}",
+    "join": "\n",
+    "give": "prompt_text"
+   }
+  },
+  {
+   "id": "encode",
+   "type": "capability",
+   "needs": [
+    "prompt_text",
+    "max_len",
+    "truncate",
+    "again"
+   ],
+   "gives": [
+    "embed",
+    "encoded",
+    "embed_at",
+    "encoder"
+   ],
+   "config": {
+    "role": "encoder",
+    "capability": "text_encode",
+    "body": {
+     "prompt": "{prompt_text}",
+     "max_sequence_length": "{max_len}",
+     "hard_truncate": "{truncate}",
+     "force_recompute": "{again}"
+    },
+    "give": {
+     "embed": "result.job_id",
+     "encoded": "result.meta",
+     "embed_at": "provider",
+     "encoder": "asset"
+    }
+   }
+  },
+  {
+   "id": "record",
+   "type": "expr",
+   "needs": [
+    "encoded",
+    "saved",
+    "prompt"
+   ],
+   "gives": [
+    "record"
+   ],
+   "config": {
+    "expr": "bool(saved) and not str(prompt or '').strip()",
+    "give": "record"
+   }
+  },
+  {
+   "id": "note",
+   "type": "lib_note",
+   "needs": [
+    "record",
+    "embed",
+    "embed_at",
+    "encoder",
+    "encoded",
+    "max_len",
+    "prompt_text",
+    "saved"
+   ],
+   "gives": [
+    "noted"
+   ],
+   "config": {
+    "kind": "image_prompt",
+    "id": "{saved}",
+    "field": "encodings",
+    "when": "record",
+    "same": [
+     "at",
+     "encoder",
+     "max_len",
+     "text"
+    ],
+    "record": {
+     "embed": "{embed}",
+     "at": "{embed_at}",
+     "encoder": "{encoder}",
+     "max_len": "{max_len}",
+     "tokens": "{encoded}",
+     "text": "{prompt_text}"
+    },
+    "give": "noted"
+   }
+  }
+ ]
+}

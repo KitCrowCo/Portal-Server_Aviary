@@ -1,0 +1,50 @@
+{
+ "name": "Add a text to a knowledge group",
+ "group": "knowledge",
+ "objective": "A piece of text that is not a file - a note, a snippet, an answer worth keeping - added under a name of its own. Adding again under the same name replaces it.",
+ "roles": {
+  "library": {
+   "needs": [
+    "knowledge_add"
+   ],
+   "about": "the knowledge group that is added to"
+  }
+ },
+ "steps": [
+  {
+   "id": "add",
+   "type": "capability",
+   "once": true,
+   "needs": [
+    "title",
+    "text"
+   ],
+   "gives": [
+    "added"
+   ],
+   "config": {
+    "role": "library",
+    "capability": "knowledge_add",
+    "body": {
+     "name": "{title}",
+     "text": "{text}"
+    },
+    "give": {
+     "added": "result.status"
+    }
+   }
+  }
+ ],
+ "about": [
+  "title"
+ ],
+ "params": {
+  "title": {
+   "label": "Name it goes in under"
+  },
+  "text": {
+   "label": "Text",
+   "type": "long"
+  }
+ }
+}

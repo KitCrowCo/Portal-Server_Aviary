@@ -1,0 +1,38 @@
+{
+ "name": "Schedules",
+ "about": "A saved set-up started by the clock: every so many minutes, or at times of day. The run belongs to whoever saved the schedule, with that person's limits. While the run it started last is still going, it does not start another.",
+ "owned": true,
+ "fields": {
+  "name": {
+   "label": "Name"
+  },
+  "setup": {
+   "label": "The set-up it starts",
+   "pick": "setup",
+   "default": "",
+   "hint": "Save a run form as a set-up first (the row of saved set-ups in any run form)."
+  },
+  "on": {
+   "label": "On",
+   "type": "boolean",
+   "default": true
+  },
+  "every_minutes": {
+   "label": "Every so many minutes",
+   "type": "number",
+   "hint": "Counted from when it last started, or from when this was saved. Empty: only at the times below."
+  },
+  "at": {
+   "label": "At these times of day",
+   "type": "list",
+   "default": [],
+   "hint": "A list of local times, 24 hours, e.g. [\"03:30\", \"15:00\"]."
+  },
+  "days": {
+   "label": "Only on these days",
+   "type": "list",
+   "default": [],
+   "hint": "0 is Monday, 6 is Sunday, e.g. [0, 1, 2, 3, 4]. Empty: every day."
+  }
+ }
+}

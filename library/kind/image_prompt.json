@@ -1,0 +1,11 @@
+{
+ "name": "Image prompts",
+ "about": "Descriptions kept for the image models, to paint again, change and try with other settings. The same prompt with the same encoder and length is encoded once and found again, on whichever machine paints it.",
+ "fields": {
+  "name": {"label": "Name"},
+  "text": {"label": "The description", "type": "long", "hint": "About four letters a token; the encoder keeps 512 tokens unless a run says otherwise."},
+  "notes": {"label": "Notes", "type": "long", "hint": "For you: what worked, which seed, which LoRA."},
+  "tags": {"label": "Tags", "type": "list", "default": []}
+ },
+ "text": "text"
+}

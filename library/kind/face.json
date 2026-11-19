@@ -1,0 +1,38 @@
+{
+ "name": "Faces",
+ "about": "One way of seeing Corvid: which panels are shown where, with what data. Drawn by one shell.",
+ "fields": {
+  "name": {
+   "label": "Name"
+  },
+  "icon": {
+   "label": "Icon",
+   "hint": "An HTML character code, e.g. &#x1F989;"
+  },
+  "order": {
+   "label": "Order among the faces",
+   "type": "integer",
+   "default": 50
+  },
+  "about": {
+   "label": "What it is for"
+  },
+  "profiles": {
+   "label": "Binding profiles",
+   "type": "list",
+   "default": [],
+   "hint": "Profiles looked at before the default one for who fills a role."
+  },
+  "embeds": {
+   "label": "Faces shown inside it",
+   "type": "list",
+   "default": []
+  },
+  "views": {
+   "label": "Views",
+   "type": "list",
+   "default": [],
+   "hint": "[{id, name, main: [panels], left, right}]; a face without views gives main, left and right itself (among the other parts)."
+  }
+ }
+}

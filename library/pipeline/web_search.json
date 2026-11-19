@@ -1,0 +1,51 @@
+{
+ "name": "Search the web",
+ "group": "outside",
+ "objective": "Results for a search, from the search server the research machine is set to: title, address and a short text each.",
+ "about": [
+  "query"
+ ],
+ "roles": {
+  "research": {
+   "needs": [
+    "web_search"
+   ],
+   "about": "the machine that touches the outside: it reads pages and makes searches"
+  }
+ },
+ "params": {
+  "query": {
+   "label": "What to search for"
+  },
+  "n": {
+   "label": "How many results",
+   "type": "integer",
+   "default": 8
+  }
+ },
+ "steps": [
+  {
+   "id": "search",
+   "type": "capability",
+   "needs": [
+    "query",
+    "n"
+   ],
+   "gives": [
+    "results"
+   ],
+   "keep": true,
+   "config": {
+    "role": "research",
+    "capability": "web_search",
+    "body": {
+     "query": "{query}",
+     "n": "{n}"
+    },
+    "give": {
+     "results": "result.results"
+    }
+   }
+  }
+ ]
+}

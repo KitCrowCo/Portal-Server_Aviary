@@ -1,0 +1,211 @@
+{
+ "name": "Measure a text model: fidelity and speed",
+ "group": "measurement",
+ "objective": "A record of where the model runs, fixed prompts answered greedily and hashed (equal set hashes between two runs = byte-identical answers), then prompt and decode speed at several prompt lengths, each sent twice in a row (the first cold for that prompt, the second showing what a kept cache saves).",
+ "roles": {
+  "subject": {
+   "needs": [
+    "chat"
+   ],
+   "about": "the model being measured"
+  }
+ },
+ "keep": true,
+ "params": {
+  "think": {
+   "label": "Thinking",
+   "type": "boolean",
+   "default": false
+  },
+  "fid_tokens": {
+   "label": "Answer length, fidelity (tokens)",
+   "type": "integer",
+   "default": 64
+  },
+  "perf_tokens": {
+   "label": "Answer length, speed (tokens)",
+   "type": "integer",
+   "default": 128
+  },
+  "lengths": {
+   "label": "Prompt lengths, speed (tokens)",
+   "type": "list",
+   "default": [
+    128,
+    2048,
+    8192
+   ]
+  },
+  "note": {
+   "label": "Note (cache state, what differs from other runs)",
+   "default": ""
+  }
+ },
+ "data": {
+  "prompts": [
+   "What is 17 * 23? Answer with the number only.",
+   "Write a Python function is_prime(n) and nothing else.",
+   "List the planets of the solar system in order from the sun, comma-separated.",
+   "Explain in two sentences why the sky looks blue.",
+   "Translate into Mandarin Chinese: The train leaves at seven tomorrow morning.",
+   "A farmer has 15 sheep; all but 8 run away. How many are left? Show your reasoning in one short paragraph, then the answer.",
+   "Give a JSON object with keys name, year, tags for the novel Frankenstein.",
+   "Summarize the plot of Romeo and Juliet in exactly three sentences.",
+   "What does the Unix command `ls -la` show? One paragraph.",
+   "Write a haiku-length line (not a known poem) about mountain fog.",
+   "Sort these numbers ascending: 42, 7, 19, 3, 88, 21.",
+   "Name three differences between TCP and UDP as a bulleted list."
+  ],
+  "notes": [
+   "The river station measures water height every ten minutes and sends the reading over a slow radio link.",
+   "A ledger lists who borrowed each tool, when it went out, and the condition it came back in.",
+   "The bakery starts the first dough at four, so the ovens are hot when the market opens.",
+   "Each node in the cluster reports free memory before it accepts a new job from the queue.",
+   "The archive keeps one copy of every letter, sorted by the year it was received.",
+   "Volunteers repaint the trail markers each spring after the snow has melted.",
+   "The library's reading room closes an hour early on the first Monday of each month.",
+   "A small solar panel charges the weather station's battery during the afternoon."
+  ]
+ },
+ "steps": [
+  {
+   "id": "card",
+   "type": "describe",
+   "gives": [
+    "card"
+   ],
+   "config": {
+    "role": "subject",
+    "verbs": [
+     "describe",
+     "memory",
+     "state",
+     "modules"
+    ],
+    "give": "card"
+   }
+  },
+  {
+   "id": "fidelity",
+   "type": "capability",
+   "each": {
+    "prompt": "{prompts}"
+   },
+   "in_turn": true,
+   "gives": [
+    "answer",
+    "thinking",
+    "usage"
+   ],
+   "config": {
+    "role": "subject",
+    "capability": "chat",
+    "body": {
+     "messages": [
+      {
+       "role": "user",
+       "content": "{prompt}"
+      }
+     ],
+     "think": "{think}",
+     "options": {
+      "temperature": 0,
+      "seed": 0,
+      "num_predict": "{fid_tokens}"
+     }
+    },
+    "give": {
+     "answer": "text",
+     "thinking": "thinking",
+     "usage": "usage"
+    }
+   }
+  },
+  {
+   "id": "hashes",
+   "type": "digest",
+   "needs": [
+    "thinking",
+    "answer"
+   ],
+   "gives": [
+    "hashes",
+    "set_hash"
+   ],
+   "config": {
+    "of": [
+     "thinking",
+     "answer"
+    ],
+    "give": {
+     "each": "hashes",
+     "all": "set_hash"
+    }
+   }
+  },
+  {
+   "id": "speed",
+   "needs": [
+    "set_hash"
+   ],
+   "each": {
+    "tokens": "{lengths}",
+    "run": [
+     1,
+     2
+    ]
+   },
+   "in_turn": true,
+   "steps": [
+    {
+     "id": "text",
+     "type": "fill",
+     "keep": false,
+     "gives": [
+      "long_prompt"
+     ],
+     "config": {
+      "lines": "{notes}",
+      "tokens": "{tokens}",
+      "line": "Note {n}: {line}",
+      "then": "\n\nWrite a numbered list with one short sentence per note above, in order, as far as you can.",
+      "give": "long_prompt"
+     }
+    },
+    {
+     "id": "ask",
+     "type": "capability",
+     "needs": [
+      "long_prompt"
+     ],
+     "gives": [
+      "speed",
+      "head"
+     ],
+     "config": {
+      "role": "subject",
+      "capability": "chat",
+      "body": {
+       "messages": [
+        {
+         "role": "user",
+         "content": "{long_prompt}"
+        }
+       ],
+       "think": "{think}",
+       "options": {
+        "temperature": 0,
+        "seed": 0,
+        "num_predict": "{perf_tokens}"
+       }
+      },
+      "give": {
+       "speed": "usage",
+       "head": "text"
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

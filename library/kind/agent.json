@@ -1,0 +1,41 @@
+{
+ "name": "AI members",
+ "about": "An AI that works here like a person given access: who it works for, its standing instructions, what it is granted. It writes only in its own space; every other change it proposes, and a person accepts it. Used by the orchestrator pipeline (and any agent step that names it).",
+ "fields": {
+  "name": {
+   "label": "Name"
+  },
+  "about": {
+   "label": "What it is for",
+   "type": "long"
+  },
+  "owner": {
+   "label": "Works for (portal user)",
+   "hint": "Its work runs on this person's behalf and never reaches more than they may. Only they (and the people below) may work with it."
+  },
+  "users": {
+   "label": "Others who may work with it",
+   "pick_users": true,
+   "default": []
+  },
+  "system": {
+   "label": "Standing instructions",
+   "type": "long",
+   "default": "",
+   "hint": "Written by a person. The AI proposes changes to them; it never edits them."
+  },
+  "read_first": {
+   "label": "Shared files it reads at every start",
+   "type": "list",
+   "default": [],
+   "hint": "[{\"project\": slug, \"file\": path}]: preferences, skills, house rules kept in a Muninn project you both see. Changed by proposal."
+  },
+  "grants": {
+   "label": "What it is granted",
+   "type": "object",
+   "default": {},
+   "hint": "space: its own space (notes, direct); projects: true or [slugs] (through their masks as agent:<this id>); files: the code space (proposals only); tools: [pipelines]; skills: [skills]; delegate: {\"most\": 3, \"rounds\": 30} lets it hand tasks to sub-agents with part of these grants."
+  }
+ },
+ "text": "system"
+}

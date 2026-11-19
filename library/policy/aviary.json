@@ -1,0 +1,6 @@
+{
+ "name": "What runs may do",
+ "about": "The owner's decisions on what a run may do beyond the default. Each key: nobody, admins, everyone, or a list of user names. python: code of the starter's own choosing (given when the run starts, or read from a file). python_fixed: code written into a pipeline, which only those who may change pipelines can change.",
+ "python": "admins",
+ "python_fixed": "everyone"
+}

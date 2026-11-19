@@ -1,0 +1,149 @@
+{
+ "name": "Agent: a task",
+ "group": "conversation",
+ "objective": "A task carried out by a model that uses tools until it calls finish: it reads, proposes changes for review, checks them, and says what it did and what is left. Nothing it proposes is applied until a person accepts it.",
+ "roles": {
+  "main": {
+   "needs": [
+    "chat"
+   ],
+   "about": "the model that works the task and decides which tools to use"
+  }
+ },
+ "params": {
+  "task": {
+   "label": "Task",
+   "type": "long"
+  },
+  "files": {
+   "label": "Files (a library space)",
+   "pick": "space",
+   "default": "",
+   "hint": "A folder it reads directly and changes only by proposals, which wait in that space's review (Tessa > Review, or wherever the review panel is)."
+  },
+  "space": {
+   "label": "Its own space",
+   "default": "",
+   "hint": "A folder name it keeps notes in between runs, written directly. Empty: none."
+  },
+  "tools": {
+   "label": "Pipelines it may use",
+   "pick": "pipeline",
+   "many": true,
+   "default": []
+  },
+  "projects": {
+   "label": "Work on projects (Muninn)",
+   "type": "boolean",
+   "default": false
+  },
+  "skills": {
+   "label": "Skills",
+   "pick": "skill",
+   "many": true,
+   "default": []
+  },
+  "system": {
+   "label": "Standing instructions",
+   "type": "long",
+   "default": ""
+  },
+  "check_tool": {
+   "label": "Goal check: tool",
+   "default": "",
+   "hint": "Run when it calls finish (check_files with Files: new problems in what it proposed). Problems send it back to work."
+  },
+  "check_pipeline": {
+   "label": "Goal check: pipeline",
+   "pick": "pipeline",
+   "default": "",
+   "hint": "Given task and summary; it gives ok and feedback."
+  },
+  "rounds": {
+   "label": "Most rounds",
+   "type": "integer",
+   "default": 40
+  },
+  "num_ctx": {
+   "label": "Context window (tokens) to keep the conversation inside",
+   "type": "integer",
+   "default": 32768
+  },
+  "written": {
+   "label": "Tell it the written call form too",
+   "type": "boolean",
+   "default": false,
+   "hint": "For a model or program without tool calling of its own. Calls written in the text are read either way."
+  }
+ },
+ "steps": [
+  {
+   "id": "how",
+   "type": "texts",
+   "needs": [
+    "skills",
+    "system"
+   ],
+   "gives": [
+    "manner"
+   ],
+   "config": {
+    "kind": "skill",
+    "ids": "{skills}",
+    "after": "{system}",
+    "give": "manner"
+   }
+  },
+  {
+   "id": "work",
+   "type": "agent",
+   "needs": [
+    "task",
+    "files",
+    "space",
+    "tools",
+    "projects",
+    "manner",
+    "check_tool",
+    "check_pipeline",
+    "rounds",
+    "num_ctx",
+    "written"
+   ],
+   "gives": [
+    "summary",
+    "status",
+    "proposed",
+    "notes",
+    "calls",
+    "rounds_used"
+   ],
+   "keep": true,
+   "config": {
+    "role": "main",
+    "mode": "task",
+    "task": "{task}",
+    "files": "{files}",
+    "space": "{space}",
+    "tools": "{tools}",
+    "projects": "{projects}",
+    "system": "{manner}",
+    "check": {
+     "tool": "{check_tool}",
+     "pipeline": "{check_pipeline}"
+    },
+    "rounds": "{rounds}",
+    "num_ctx": "{num_ctx}",
+    "written": "{written}",
+    "give": {
+     "summary": "text",
+     "status": "status",
+     "proposed": "proposed",
+     "notes": "notes",
+     "calls": "calls",
+     "rounds_used": "rounds"
+    }
+   }
+  }
+ ]
+}

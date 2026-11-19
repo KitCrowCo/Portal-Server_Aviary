@@ -1,0 +1,24 @@
+{
+ "name": "Skills",
+ "about": "How to do one kind of thing well: the steps, the tools to use and how, what to check before calling it done. Written for a model, readable by a person.",
+ "fields": {
+  "name": {
+   "label": "Name"
+  },
+  "about": {
+   "label": "What it is for",
+   "hint": "One line, shown where it is chosen."
+  },
+  "text": {
+   "label": "The text",
+   "type": "long",
+   "hint": "The steps and rules. Plain text or Markdown."
+  },
+  "tags": {
+   "label": "Tags",
+   "type": "list",
+   "default": []
+  }
+ },
+ "text": "text"
+}

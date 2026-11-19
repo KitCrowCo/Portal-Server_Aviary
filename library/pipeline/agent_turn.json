@@ -1,0 +1,168 @@
+{
+ "name": "Assistant with tools",
+ "group": "conversation",
+ "objective": "One answer to a conversation so far, by a model that may use the ticked pipelines as its tools on the way: each use is a run of its own, under the same limits as the person's.",
+ "roles": {
+  "main": {
+   "needs": [
+    "chat"
+   ],
+   "about": "the model that answers and decides which tools to use",
+   "facts": {
+    "chars": {
+     "is": "len(str(messages))",
+     "label": "length of the conversation (characters)",
+     "kind": "number"
+    },
+    "images": {
+     "is": "any(m.get('images') for m in messages)",
+     "label": "images come with it",
+     "kind": "yes/no"
+    }
+   }
+  }
+ },
+ "params": {
+  "messages": {
+   "label": "Conversation so far",
+   "type": "list"
+  },
+  "prompt": {
+   "label": "Prompt",
+   "pick": "prompt",
+   "default": "",
+   "hint": "A prompt kept in the library, put before the standing instructions."
+  },
+  "contexts": {
+   "label": "Contexts",
+   "pick": "context",
+   "many": true,
+   "default": [],
+   "hint": "Contexts kept in the library, added after the prompt."
+  },
+  "skills": {
+   "label": "Skills",
+   "pick": "skill",
+   "many": true,
+   "default": [],
+   "hint": "Skills kept in the library, added after the contexts: how to do the kinds of thing it may be asked."
+  },
+  "tools": {
+   "label": "Pipelines it may use",
+   "pick": "pipeline",
+   "many": true,
+   "default": [],
+   "hint": "Each ticked pipeline is a tool the model can call with that pipeline's inputs. Its runs are listed under this one."
+  },
+  "system": {
+   "label": "Standing instructions",
+   "default": "",
+   "type": "long"
+  },
+  "rounds": {
+   "label": "Most rounds",
+   "type": "integer",
+   "default": 40,
+   "hint": "A round is one answer of the model, with the tool uses it asks for. When they run out, what it has so far is given."
+  },
+  "written": {
+   "label": "Tool calls written into the text",
+   "type": "boolean",
+   "default": false,
+   "hint": "For a model or program without tool calling of its own: it is told how to write a call, and such calls are read from its answer."
+  },
+  "projects": {
+   "label": "Work on projects (Muninn)",
+   "type": "boolean",
+   "default": false,
+   "hint": "The project tools: read the projects its mask shows and propose changes, which wait for each project's owner. Works as agent:local for whoever started it."
+  }
+ },
+ "steps": [
+  {
+   "id": "how",
+   "type": "texts",
+   "needs": [
+    "skills",
+    "system"
+   ],
+   "gives": [
+    "manner"
+   ],
+   "config": {
+    "kind": "skill",
+    "ids": "{skills}",
+    "after": "{system}",
+    "give": "manner"
+   }
+  },
+  {
+   "id": "know",
+   "type": "texts",
+   "needs": [
+    "contexts",
+    "manner"
+   ],
+   "gives": [
+    "background"
+   ],
+   "config": {
+    "kind": "context",
+    "ids": "{contexts}",
+    "after": "{manner}",
+    "give": "background"
+   }
+  },
+  {
+   "id": "stand",
+   "type": "texts",
+   "needs": [
+    "prompt",
+    "background"
+   ],
+   "gives": [
+    "standing"
+   ],
+   "config": {
+    "kind": "prompt",
+    "ids": "{prompt}",
+    "after": "{background}",
+    "give": "standing"
+   }
+  },
+  {
+   "id": "answer",
+   "type": "agent",
+   "needs": [
+    "messages",
+    "standing",
+    "tools",
+    "rounds",
+    "written",
+    "projects"
+   ],
+   "gives": [
+    "text",
+    "calls",
+    "rounds_used",
+    "open"
+   ],
+   "keep": true,
+   "config": {
+    "role": "main",
+    "messages": "{messages}",
+    "system": "{standing}",
+    "tools": "{tools}",
+    "rounds": "{rounds}",
+    "written": "{written}",
+    "give": {
+     "text": "text",
+     "calls": "calls",
+     "rounds_used": "rounds",
+     "open": "open"
+    },
+    "projects": "{projects}"
+   }
+  }
+ ]
+}

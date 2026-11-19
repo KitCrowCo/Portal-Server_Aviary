@@ -1,0 +1,85 @@
+{
+ "name": "Orchestrator: an AI member at work",
+ "group": "conversation",
+ "objective": "A conversation with one AI that works here as a member: it knows what it has been granted (its own space, projects with their state and issues, the code files, tools, skills), keeps its own notes, turns what you ask into issues and plans in the project, works them or hands them to sub-agents, and proposes every change for you to accept. Its profile (library kind agent) says what it may use; nothing beyond it is reachable.",
+ "roles": {
+  "main": {
+   "needs": [
+    "chat"
+   ],
+   "about": "the model that talks, plans and decides: the strongest you have for this"
+  },
+  "helper": {
+   "needs": [
+    "chat"
+   ],
+   "about": "a smaller model for well-bounded sub-tasks it hands on (delegate with helper); empty: the main model does them",
+   "optional": true
+  }
+ },
+ "params": {
+  "messages": {
+   "label": "Conversation so far",
+   "type": "list"
+  },
+  "profile": {
+   "label": "The AI (its profile)",
+   "pick": "agent",
+   "hint": "Library kind agent: who it works for, its standing instructions and what it is granted."
+  },
+  "rounds": {
+   "label": "Most rounds per answer",
+   "type": "integer",
+   "default": 40,
+   "advanced": true,
+   "hint": "A round is one reply of the model with the tool uses it asks for; delegated tasks count their own rounds."
+  },
+  "num_ctx": {
+   "label": "Context window (tokens) to keep the conversation inside",
+   "type": "integer",
+   "default": 32768,
+   "advanced": true
+  },
+  "written": {
+   "label": "Tell it the written call form too",
+   "type": "boolean",
+   "default": false,
+   "advanced": true,
+   "hint": "For a model or program without tool calling of its own."
+  }
+ },
+ "steps": [
+  {
+   "id": "answer",
+   "type": "agent",
+   "needs": [
+    "messages",
+    "profile",
+    "rounds",
+    "num_ctx",
+    "written"
+   ],
+   "gives": [
+    "text",
+    "calls",
+    "rounds_used",
+    "open"
+   ],
+   "keep": true,
+   "config": {
+    "role": "main",
+    "messages": "{messages}",
+    "profile": "{profile}",
+    "rounds": "{rounds}",
+    "num_ctx": "{num_ctx}",
+    "written": "{written}",
+    "give": {
+     "text": "text",
+     "calls": "calls",
+     "rounds_used": "rounds",
+     "open": "open"
+    }
+   }
+  }
+ ]
+}

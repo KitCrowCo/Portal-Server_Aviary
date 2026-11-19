@@ -1,0 +1,490 @@
+{
+ "name": "Change a picture (whole, or a painted area)",
+ "group": "images",
+ "objective": "A picture changed by the prompt: all of it, or only an area painted over it (inpaint). Strength says how much of what is there is kept.",
+ "about": [
+  "prompt_text",
+  "picked"
+ ],
+ "roles": {
+  "encoder": {
+   "needs": [
+    "text_encode"
+   ],
+   "about": "the encoder model and the machine that encodes - only when the prompt has no encoding yet for this text and length (step kept). A run that finds one never places or loads it."
+  },
+  "painter": {
+   "needs": [
+    "image_generate"
+   ],
+   "about": "the image model and the machine that paints"
+  }
+ },
+ "params": {
+  "area": {
+   "label": "What is changed",
+   "pick_from": [
+    [
+     "whole",
+     "the whole picture"
+    ],
+    [
+     "painted",
+     "only the area painted on it"
+    ]
+   ],
+   "default": "whole",
+   "hint": "The whole picture: repainted from the prompt at the strength below (a mask drawn is ignored). Only the painted area: draw over the picture; the rest stays as it is."
+  },
+  "saved": {
+   "label": "Kept prompt",
+   "pick": "image_prompt",
+   "default": "",
+   "hint": "One of Sunbird's kept prompts (Sunbird, Prompts)."
+  },
+  "picked": {
+   "label": "The image to start from",
+   "type": "items",
+   "space_from": "from_space",
+   "default": []
+  },
+  "prompt": {
+   "label": "Words added after the kept prompt",
+   "type": "long",
+   "default": "",
+   "hint": "Optional. With a kept prompt chosen, these are added after it (and it is encoded again, since the text is new). Without one, they are the whole prompt."
+  },
+  "strength": {
+   "label": "How far from the picture, inside the painted area (0 to 1)",
+   "type": "number",
+   "default": 1.0,
+   "hint": "1: the picture (or the painted area) is made anew from the prompt. Lower keeps more of what is there: 0.6 changes it noticeably, 0.3 only a little. Only this share of the steps is run."
+  },
+  "steps": {
+   "label": "Steps",
+   "type": "integer",
+   "default": 4
+  },
+  "seed": {
+   "label": "Seed (-1: a new one each time)",
+   "type": "integer",
+   "default": -1
+  },
+  "from_space": {
+   "label": "Picked from",
+   "pick": "space",
+   "default": "media"
+  },
+  "space": {
+   "label": "Kept in",
+   "pick": "space",
+   "default": "media"
+  },
+  "folder": {
+   "label": "Folder there",
+   "default": "images"
+  },
+  "max_len": {
+   "label": "Prompt tokens kept",
+   "type": "integer",
+   "default": 512,
+   "hint": "Longer prompts are cut here at encoding."
+  },
+  "truncate": {
+   "label": "Cut a longer prompt",
+   "type": "boolean",
+   "default": true
+  },
+  "mask": {
+   "label": "What to paint again",
+   "type": "mask",
+   "over": "picked",
+   "default": "",
+   "hint": "Paint over the part to change. White is painted again; the rest is kept. Used only when \"What is changed\" is the painted area."
+  },
+  "loras": {
+   "label": "LoRAs, each at its own strength",
+   "pick_assets": "image_lora",
+   "strengths": true,
+   "default": {},
+   "hint": "A strength beside each LoRA the machines offer (the files in a machine's image models, lora/flux2): empty or 0 leaves it out, 1 is its full effect. At most three are used at once."
+  },
+  "guidance": {
+   "label": "Guidance",
+   "type": "number",
+   "default": 1.0
+  },
+  "shift": {
+   "label": "Shift (empty: the model's own)",
+   "type": "number",
+   "default": null
+  },
+  "offload": {
+   "label": "Memory saving",
+   "pick_from": [
+    [
+     "none",
+     "none (fastest, most memory)"
+    ],
+    [
+     "vae_cpu",
+     "decoder on the processor (about 1 GB less)"
+    ],
+    [
+     "sequential",
+     "block by block (slowest, least memory)"
+    ]
+   ],
+   "default": "none",
+   "hint": "What the painter keeps on the graphics side while it works. When a run ends with \"out of memory\", take the next heavier one."
+  },
+  "vae_tiling": {
+   "label": "Decode in tiles",
+   "type": "boolean",
+   "default": true
+  }
+ },
+ "steps": [
+  {
+   "id": "words",
+   "type": "texts",
+   "needs": [
+    "saved",
+    "prompt"
+   ],
+   "gives": [
+    "prompt_text"
+   ],
+   "config": {
+    "kind": "image_prompt",
+    "ids": "{saved}",
+    "after": "{prompt}",
+    "join": "\n",
+    "give": "prompt_text"
+   }
+  },
+  {
+   "id": "kept",
+   "type": "kept_encoding",
+   "needs": [
+    "saved",
+    "prompt_text",
+    "max_len"
+   ],
+   "gives": [
+    "kept_embed",
+    "kept_at"
+   ],
+   "config": {
+    "kind": "image_prompt",
+    "id": "{saved}",
+    "text": "{prompt_text}",
+    "max_len": "{max_len}",
+    "give": {
+     "kept_embed": "embed",
+     "kept_at": "at"
+    }
+   }
+  },
+  {
+   "id": "choose",
+   "type": "expr",
+   "needs": [
+    "kept_embed"
+   ],
+   "gives": [
+    "go_kept",
+    "go_new"
+   ],
+   "config": {
+    "expr": "'kept' if kept_embed else 'new'",
+    "routes": {
+     "kept": "go_kept",
+     "new": "go_new"
+    }
+   }
+  },
+  {
+   "id": "use",
+   "type": "expr",
+   "needs": [
+    "go_kept",
+    "kept_embed"
+   ],
+   "gives": [
+    "embed"
+   ],
+   "config": {
+    "expr": "kept_embed",
+    "give": "embed"
+   }
+  },
+  {
+   "id": "use_at",
+   "type": "expr",
+   "needs": [
+    "go_kept",
+    "kept_at"
+   ],
+   "gives": [
+    "embed_at"
+   ],
+   "config": {
+    "expr": "kept_at",
+    "give": "embed_at"
+   }
+  },
+  {
+   "id": "encode",
+   "type": "capability",
+   "needs": [
+    "go_new",
+    "prompt_text",
+    "max_len",
+    "truncate"
+   ],
+   "gives": [
+    "embed",
+    "encoded",
+    "embed_at",
+    "encoder"
+   ],
+   "config": {
+    "role": "encoder",
+    "capability": "text_encode",
+    "body": {
+     "prompt": "{prompt_text}",
+     "max_sequence_length": "{max_len}",
+     "hard_truncate": "{truncate}"
+    },
+    "give": {
+     "embed": "result.job_id",
+     "encoded": "result.meta",
+     "embed_at": "provider",
+     "encoder": "asset"
+    }
+   }
+  },
+  {
+   "id": "record",
+   "type": "expr",
+   "needs": [
+    "encoded",
+    "saved",
+    "prompt"
+   ],
+   "gives": [
+    "record"
+   ],
+   "config": {
+    "expr": "bool(saved) and not str(prompt or '').strip()",
+    "give": "record"
+   }
+  },
+  {
+   "id": "note",
+   "type": "lib_note",
+   "needs": [
+    "record",
+    "embed",
+    "embed_at",
+    "encoder",
+    "encoded",
+    "max_len",
+    "prompt_text",
+    "saved"
+   ],
+   "gives": [
+    "noted"
+   ],
+   "config": {
+    "kind": "image_prompt",
+    "id": "{saved}",
+    "field": "encodings",
+    "when": "record",
+    "same": [
+     "at",
+     "encoder",
+     "max_len",
+     "text"
+    ],
+    "record": {
+     "embed": "{embed}",
+     "at": "{embed_at}",
+     "encoder": "{encoder}",
+     "max_len": "{max_len}",
+     "tokens": "{encoded}",
+     "text": "{prompt_text}"
+    },
+    "give": "noted"
+   }
+  },
+  {
+   "id": "carry",
+   "type": "carry",
+   "needs": [
+    "embed",
+    "embed_at"
+   ],
+   "gives": [
+    "carried"
+   ],
+   "config": {
+    "from_at": "{embed_at}",
+    "to": "painter",
+    "location": "vault",
+    "path": "jobs/{embed}",
+    "give": "carried"
+   }
+  },
+  {
+   "id": "list",
+   "type": "file_list",
+   "needs": [
+    "picked",
+    "from_space"
+   ],
+   "gives": [
+    "files"
+   ],
+   "config": {
+    "space": "{from_space}",
+    "paths": "{picked}",
+    "extensions": [
+     ".png",
+     ".jpg",
+     ".jpeg",
+     ".webp"
+    ],
+    "give": "files"
+   }
+  },
+  {
+   "id": "first",
+   "type": "expr",
+   "needs": [
+    "files"
+   ],
+   "gives": [
+    "path"
+   ],
+   "config": {
+    "expr": "files[0]",
+    "give": "path"
+   }
+  },
+  {
+   "id": "read",
+   "type": "file_read",
+   "needs": [
+    "path",
+    "from_space"
+   ],
+   "gives": [
+    "b64"
+   ],
+   "config": {
+    "space": "{from_space}",
+    "path": "{path}",
+    "base64": true,
+    "give": "b64"
+   }
+  },
+  {
+   "id": "lora_list",
+   "type": "expr",
+   "needs": [
+    "loras"
+   ],
+   "gives": [
+    "lora_list"
+   ],
+   "config": {
+    "expr": "[{'path': n, 'scale': float(s)} for n, s in loras.items() if s and float(s)] if isinstance(loras, dict) else [{'path': n, 'scale': 1.0} for n in loras or []]",
+    "give": "lora_list"
+   }
+  },
+  {
+   "id": "area_mask",
+   "type": "expr",
+   "needs": [
+    "area",
+    "mask"
+   ],
+   "gives": [
+    "used_mask"
+   ],
+   "config": {
+    "expr": "mask if area == 'painted' else ''",
+    "give": "used_mask"
+   }
+  },
+  {
+   "id": "paint",
+   "type": "capability",
+   "once": true,
+   "needs": [
+    "embed",
+    "prompt_text",
+    "b64",
+    "strength",
+    "steps",
+    "seed",
+    "carried",
+    "used_mask",
+    "lora_list",
+    "guidance",
+    "shift",
+    "offload",
+    "vae_tiling"
+   ],
+   "gives": [
+    "file_name"
+   ],
+   "config": {
+    "role": "painter",
+    "capability": "image_generate",
+    "detached": true,
+    "body": {
+     "prompt": "{prompt_text}",
+     "embed_job_id": "{embed}",
+     "image": "data:image/png;base64,{b64}",
+     "strength": "{strength}",
+     "width": 0,
+     "height": 0,
+     "steps": "{steps}",
+     "seed": "{seed}",
+     "mask_image": "{used_mask}",
+     "guidance_scale": "{guidance}",
+     "loras": "{lora_list}",
+     "shift": "{shift}",
+     "offload_mode": "{offload}",
+     "vae_tiling": "{vae_tiling}"
+    },
+    "give": {
+     "file_name": "result.file_name"
+    }
+   }
+  },
+  {
+   "id": "bring",
+   "type": "fetch",
+   "needs": [
+    "file_name",
+    "space",
+    "folder"
+   ],
+   "gives": [
+    "made"
+   ],
+   "config": {
+    "role": "painter",
+    "location": "outputs",
+    "path": "{file_name}",
+    "space": "{space}",
+    "into": "{folder}",
+    "give": "made"
+   }
+  }
+ ]
+}

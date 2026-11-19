@@ -1,0 +1,55 @@
+{
+ "name": "Ask a knowledge group",
+ "group": "knowledge",
+ "objective": "One question to a knowledge group, answered by the group's own program from what it holds.",
+ "roles": {
+  "library": {
+   "needs": [
+    "knowledge_query",
+    "knowledge_add"
+   ],
+   "about": "the knowledge group that is asked. Several may be asked together: each answers from what it holds, and the answers are given one under the other.",
+   "many": true
+  }
+ },
+ "steps": [
+  {
+   "id": "ask",
+   "type": "capability",
+   "needs": [
+    "question"
+   ],
+   "gives": [
+    "answer"
+   ],
+   "config": {
+    "role": "library",
+    "capability": "knowledge_query",
+    "body": {
+     "query": "{question}",
+     "options": "{options}"
+    },
+    "give": {
+     "answer": "text"
+    },
+    "all": true
+   }
+  }
+ ],
+ "about": [
+  "question"
+ ],
+ "params": {
+  "question": {
+   "label": "Question",
+   "type": "long"
+  },
+  "options": {
+   "label": "The group's own options",
+   "type": "options",
+   "of": "library",
+   "default": {},
+   "hint": "What the program behind the group takes for a question. Left empty, an option is not sent and the program's own default holds."
+  }
+ }
+}

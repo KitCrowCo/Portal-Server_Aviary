@@ -1,0 +1,39 @@
+{
+ "name": "Pools",
+ "about": "A named set of what the machines hold: models, knowledge groups, voices. A role can be filled from a pool instead of one asset, so the work goes to whichever member is free. A pool that lists people keeps its members for them: nobody else, and no work running as anybody else, uses them.",
+ "fields": {
+  "name": {
+   "label": "Name"
+  },
+  "about": {
+   "label": "What it is for",
+   "type": "long"
+  },
+  "members": {
+   "label": "What is in it",
+   "pick_assets": true,
+   "default": [],
+   "hint": "Ticked: that asset on that machine. Under Advanced, as JSON, an entry may also be a pattern: \"*|name\" is that name on any machine, \"machine|*\" everything a machine holds."
+  },
+  "users": {
+   "label": "Kept for these people",
+   "pick_users": true,
+   "default": [],
+   "hint": "Nobody ticked: the pool is only a set, and limits nothing. Somebody ticked: its members are used by these people only, an admin included."
+  },
+  "prefer": {
+   "label": "Which member, when several fit",
+   "pick_from": [
+    [
+     "running",
+     "one that is already running, then the order above"
+    ],
+    [
+     "listed",
+     "the order above"
+    ]
+   ],
+   "default": "running"
+  }
+ }
+}

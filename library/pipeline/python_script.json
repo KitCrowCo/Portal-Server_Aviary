@@ -1,0 +1,34 @@
+{
+ "name": "Run a Python script",
+ "group": "tools",
+ "objective": "Runs the code given as a process of its own, with every right the portal has, and gives what its last printed line says. For work no step type covers yet.",
+ "params": {
+  "code": {
+   "label": "Code",
+   "type": "code",
+   "default": "import sys, json\ninputs = json.load(sys.stdin)\nprint(json.dumps({\"value\": sorted(inputs)}))"
+  },
+  "arg": {
+   "label": "Argument",
+   "default": ""
+  }
+ },
+ "steps": [
+  {
+   "id": "run",
+   "type": "python",
+   "once": true,
+   "needs": [
+    "code",
+    "arg"
+   ],
+   "gives": [
+    "value"
+   ],
+   "config": {
+    "from": "code",
+    "arg": "{arg}"
+   }
+  }
+ ]
+}

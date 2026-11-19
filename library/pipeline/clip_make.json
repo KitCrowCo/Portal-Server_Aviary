@@ -1,0 +1,154 @@
+{
+ "name": "Make a clip",
+ "group": "images",
+ "objective": "A short moving clip from a description, by the model filling the animator role; kept as a GIF beside the images. A start frame, and optionally an end frame, picked from the gallery make it go from that picture (to the other).",
+ "about": [
+  "prompt"
+ ],
+ "roles": {
+  "animator": {
+   "needs": [
+    "text_to_video"
+   ],
+   "about": "the video model"
+  }
+ },
+ "params": {
+  "prompt": {
+   "label": "Description",
+   "type": "long"
+  },
+  "frames": {
+   "label": "Frames",
+   "type": "integer",
+   "default": 25
+  },
+  "fps": {
+   "label": "Frames per second",
+   "type": "number",
+   "default": 8
+  },
+  "seed": {
+   "label": "Seed (-1: a new one each time)",
+   "type": "integer",
+   "default": -1
+  },
+  "space": {
+   "label": "Kept in",
+   "pick": "space",
+   "default": "media"
+  },
+  "folder": {
+   "label": "Folder there",
+   "default": "clips"
+  },
+  "start": {
+   "label": "Start frame (optional)",
+   "type": "items",
+   "space_from": "from_space",
+   "default": [],
+   "hint": "A picture the clip starts from. With an end frame too, the clip goes from one to the other."
+  },
+  "end": {
+   "label": "End frame (optional)",
+   "type": "items",
+   "space_from": "from_space",
+   "default": [],
+   "hint": "A picture the clip ends on (needs a start frame and a model that takes both)."
+  },
+  "from_space": {
+   "label": "Frames picked from",
+   "pick": "space",
+   "default": "media"
+  }
+ },
+ "steps": [
+  {
+   "id": "start_uri",
+   "type": "file_uri",
+   "needs": [
+    "start",
+    "from_space"
+   ],
+   "gives": [
+    "start_image"
+   ],
+   "config": {
+    "space": "{from_space}",
+    "paths": "{start}",
+    "give": "start_image"
+   }
+  },
+  {
+   "id": "end_uri",
+   "type": "file_uri",
+   "needs": [
+    "end",
+    "from_space"
+   ],
+   "gives": [
+    "end_image"
+   ],
+   "config": {
+    "space": "{from_space}",
+    "paths": "{end}",
+    "give": "end_image"
+   }
+  },
+  {
+   "id": "make",
+   "type": "capability",
+   "once": true,
+   "needs": [
+    "prompt",
+    "frames",
+    "fps",
+    "seed",
+    "start_image",
+    "end_image"
+   ],
+   "gives": [
+    "file_name"
+   ],
+   "config": {
+    "role": "animator",
+    "capability": "text_to_video",
+    "detached": true,
+    "body": {
+     "prompt": "{prompt}",
+     "num_frames": "{frames}",
+     "fps": "{fps}",
+     "seed": "{seed}",
+     "formats": [
+      "gif"
+     ],
+     "start_image": "{start_image}",
+     "end_image": "{end_image}"
+    },
+    "give": {
+     "file_name": "result.file_name"
+    }
+   }
+  },
+  {
+   "id": "bring",
+   "type": "fetch",
+   "needs": [
+    "file_name",
+    "space",
+    "folder"
+   ],
+   "gives": [
+    "made"
+   ],
+   "config": {
+    "role": "animator",
+    "location": "outputs",
+    "path": "{file_name}",
+    "space": "{space}",
+    "into": "{folder}",
+    "give": "made"
+   }
+  }
+ ]
+}

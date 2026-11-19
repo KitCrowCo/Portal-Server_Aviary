@@ -1,0 +1,95 @@
+{
+ "name": "Hear what was said",
+ "group": "voice",
+ "objective": "Speech to text: a recording becomes the words said in it. The recording is a file picked from a space, or - from a microphone - handed in directly.",
+ "about": [
+  "language"
+ ],
+ "roles": {
+  "ears": {
+   "needs": [
+    "speech_to_text"
+   ],
+   "about": "the model that listens"
+  }
+ },
+ "params": {
+  "space": {
+   "label": "Space",
+   "pick": "space",
+   "default": "common"
+  },
+  "picked": {
+   "label": "Recording (a sound file: wav, mp3, ogg, webm, m4a)",
+   "type": "items",
+   "space_from": "space",
+   "default": [],
+   "hint": "The first file picked is heard."
+  },
+  "audio_b64": {
+   "label": "Recording handed in directly (base64 or a data URL)",
+   "type": "long",
+   "default": "",
+   "internal": true,
+   "hint": "What a microphone gives. When set, the picked file is not read."
+  },
+  "language": {
+   "label": "Language (empty: found by listening)",
+   "default": null
+  }
+ },
+ "steps": [
+  {
+   "id": "file",
+   "type": "file_uri",
+   "needs": [
+    "picked"
+   ],
+   "gives": [
+    "from_file"
+   ],
+   "config": {
+    "space": "{space}",
+    "paths": "{picked}",
+    "give": "from_file"
+   }
+  },
+  {
+   "id": "which",
+   "type": "expr",
+   "needs": [
+    "audio_b64",
+    "from_file"
+   ],
+   "gives": [
+    "audio"
+   ],
+   "config": {
+    "expr": "audio_b64 or from_file or ''",
+    "give": "audio"
+   }
+  },
+  {
+   "id": "listen",
+   "type": "capability",
+   "needs": [
+    "audio",
+    "language"
+   ],
+   "gives": [
+    "text"
+   ],
+   "config": {
+    "role": "ears",
+    "capability": "speech_to_text",
+    "body": {
+     "audio_b64": "{audio}",
+     "language": "{language}"
+    },
+    "give": {
+     "text": "result.text"
+    }
+   }
+  }
+ ]
+}

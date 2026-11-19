@@ -1,0 +1,24 @@
+{
+ "name": "Contexts",
+ "about": "Things a model should know while it works: a project's rules, a glossary, the layout of a code base, a house style. A pipeline that offers contexts adds the ticked ones after the prompt.",
+ "fields": {
+  "name": {
+   "label": "Name"
+  },
+  "about": {
+   "label": "What it is for",
+   "hint": "One line, shown where it is chosen."
+  },
+  "text": {
+   "label": "The text",
+   "type": "long",
+   "hint": "Written as reference material. Plain text or Markdown."
+  },
+  "tags": {
+   "label": "Tags",
+   "type": "list",
+   "default": []
+  }
+ },
+ "text": "text"
+}

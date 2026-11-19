@@ -1,0 +1,278 @@
+{
+ "name": "Chat turn",
+ "group": "conversation",
+ "objective": "One answer to a conversation so far. Pictures attached to the message are read first by the eyes role (a model that can see), and what it read joins the message as text.",
+ "roles": {
+  "main": {
+   "needs": [
+    "chat"
+   ],
+   "about": "the model that answers",
+   "facts": {
+    "chars": {
+     "is": "len(str(messages))",
+     "label": "length of the conversation (characters)",
+     "kind": "number"
+    }
+   }
+  },
+  "eyes": {
+   "needs": [
+    "vision"
+   ],
+   "about": "reads pictures attached to a message (text verbatim, a translation, what is shown) so the model that answers gets them as text. Any model that can see; it may be the same as the one that answers.",
+   "optional": true
+  }
+ },
+ "params": {
+  "messages": {
+   "label": "Conversation so far",
+   "type": "list"
+  },
+  "prompt": {
+   "label": "Prompt",
+   "pick": "prompt",
+   "default": "",
+   "hint": "A prompt kept in the library, put before the standing instructions."
+  },
+  "contexts": {
+   "label": "Contexts",
+   "pick": "context",
+   "many": true,
+   "default": [],
+   "hint": "Contexts kept in the library, added after the prompt."
+  },
+  "system": {
+   "label": "Standing instructions",
+   "default": "",
+   "type": "long"
+  },
+  "think": {
+   "label": "Thinking",
+   "type": "boolean",
+   "default": false
+  },
+  "session": {
+   "label": "Cache session",
+   "default": "",
+   "internal": true,
+   "hint": "Names the model's kept state for this piece of work, so a machine that keeps such state (the llama program's KV ring) continues from it instead of reading everything again. A conversation gives its own id."
+  },
+  "pictures": {
+   "label": "Pictures with the last message",
+   "type": "list",
+   "default": [],
+   "internal": true,
+   "hint": "Images (base64, as Ollama's messages carry them) attached to the message being answered. Each is read by the eyes role first; the model that answers gets what was read as text, so it needs no vision of its own."
+  },
+  "look": {
+   "label": "How a picture is read",
+   "type": "long",
+   "advanced": true,
+   "default": "Read this picture exactly. First write out all text in it, verbatim and in its original language, keeping its layout as text (lists, tables, arrows, what is grouped together). If any of the text is not in the language named at the end, then give a translation of it into that language. Then say briefly what is drawn or shown that the text does not say. Do not guess at text you cannot read; mark it [unreadable]."
+  },
+  "language": {
+   "label": "Language to translate pictures' text into",
+   "default": "English",
+   "advanced": true
+  }
+ },
+ "steps": [
+  {
+   "id": "ask_look",
+   "type": "shape",
+   "needs": [
+    "look",
+    "language"
+   ],
+   "gives": [
+    "look_ask"
+   ],
+   "config": {
+    "set": {
+     "look_ask": "{look}\n\nLanguage to translate into: {language}"
+    }
+   }
+  },
+  {
+   "id": "look",
+   "type": "pipeline",
+   "needs": [
+    "pictures",
+    "look_ask"
+   ],
+   "gives": [
+    "seen"
+   ],
+   "config": {
+    "plan": {
+     "name": "Read one picture",
+     "roles": {
+      "eyes": {
+       "needs": [
+        "vision"
+       ],
+       "about": "reads attached pictures for the model that answers"
+      }
+     },
+     "keep": true,
+     "params": {
+      "picture": {},
+      "ask": {},
+      "think": {
+       "default": false
+      }
+     },
+     "steps": [
+      {
+       "id": "read",
+       "type": "capability",
+       "needs": [
+        "picture",
+        "ask"
+       ],
+       "gives": [
+        "seen"
+       ],
+       "config": {
+        "role": "eyes",
+        "capability": "chat",
+        "body": {
+         "messages": [
+          {
+           "role": "user",
+           "content": "{ask}",
+           "images": [
+            "{picture}"
+           ]
+          }
+         ],
+         "think": "{think}"
+        },
+        "give": {
+         "seen": "text"
+        }
+       }
+      }
+     ]
+    },
+    "each": "pictures",
+    "inputs": {
+     "picture": "{item}",
+     "ask": "{look_ask}"
+    },
+    "give": {
+     "seen": "seen"
+    }
+   }
+  },
+  {
+   "id": "add_seen",
+   "type": "expr",
+   "needs": [
+    "messages",
+    "seen"
+   ],
+   "gives": [
+    "seen_text"
+   ],
+   "config": {
+    "expr": "'\\n\\n'.join('[Picture ' + str(i + 1) + ' attached, as read by the eyes role:]\\n' + str(s) for i, s in enumerate(seen) if s)",
+    "give": "seen_text"
+   }
+  },
+  {
+   "id": "with_seen",
+   "type": "expr",
+   "needs": [
+    "messages",
+    "seen_text"
+   ],
+   "gives": [
+    "talk"
+   ],
+   "config": {
+    "expr": "messages[:-1] + [dict(messages[-1], content=str(messages[-1]['content']) + '\\n\\n' + seen_text)] if seen_text and messages else messages",
+    "give": "talk"
+   }
+  },
+  {
+   "id": "know",
+   "type": "texts",
+   "needs": [
+    "contexts",
+    "system"
+   ],
+   "gives": [
+    "background"
+   ],
+   "config": {
+    "kind": "context",
+    "ids": "{contexts}",
+    "after": "{system}",
+    "give": "background"
+   }
+  },
+  {
+   "id": "stand",
+   "type": "texts",
+   "needs": [
+    "prompt",
+    "background"
+   ],
+   "gives": [
+    "standing"
+   ],
+   "config": {
+    "kind": "prompt",
+    "ids": "{prompt}",
+    "after": "{background}",
+    "give": "standing"
+   }
+  },
+  {
+   "id": "frame",
+   "type": "expr",
+   "needs": [
+    "talk",
+    "standing"
+   ],
+   "gives": [
+    "framed"
+   ],
+   "config": {
+    "expr": "([{'role': 'system', 'content': standing}] if standing else []) + talk",
+    "give": "framed"
+   }
+  },
+  {
+   "id": "answer",
+   "type": "capability",
+   "needs": [
+    "framed",
+    "session"
+   ],
+   "gives": [
+    "text",
+    "thinking",
+    "usage"
+   ],
+   "config": {
+    "role": "main",
+    "capability": "chat",
+    "body": {
+     "messages": "{framed}",
+     "think": "{think}",
+     "options": {
+      "cache_session": "{session}"
+     }
+    },
+    "give": {
+     "text": "text",
+     "thinking": "thinking",
+     "usage": "usage"
+    }
+   }
+  }
+ ]
+}

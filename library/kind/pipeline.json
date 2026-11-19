@@ -1,0 +1,53 @@
+{
+ "name": "Pipelines",
+ "about": "A plan of work: its inputs, the roles it needs filled, and its steps, wired by the names they need and give. Aviary's director enacts it.",
+ "fields": {
+  "name": {
+   "label": "Name"
+  },
+  "group": {
+   "label": "Group",
+   "hint": "Panels list pipelines by group: conversation, knowledge, documents, measurement, images, voice, tools."
+  },
+  "objective": {
+   "label": "What it is for",
+   "type": "long"
+  },
+  "on_restart": {
+   "label": "After an interruption",
+   "pick_from": [
+    [
+     "",
+     "(the director's default: wait)"
+    ],
+    [
+     "go",
+     "go on by itself"
+    ],
+    [
+     "ask",
+     "wait to be told"
+    ]
+   ],
+   "default": ""
+  },
+  "roles": {
+   "label": "Roles it needs",
+   "type": "object",
+   "default": {},
+   "hint": "{role: {needs: [capabilities], about, facts, optional}}"
+  },
+  "params": {
+   "label": "Inputs",
+   "type": "object",
+   "default": {},
+   "hint": "{name: {label, type, default, hint, pick, ...}}"
+  },
+  "steps": {
+   "label": "Steps",
+   "type": "list",
+   "default": [],
+   "hint": "[{id, type, needs, gives, keep, once, config}]"
+  }
+ }
+}

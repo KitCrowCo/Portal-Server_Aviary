@@ -1,0 +1,3 @@
+{
+ "pipeline": ["knowledge_add_file", "knowledge_add_folder"]
+}
